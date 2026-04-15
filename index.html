@@ -373,7 +373,7 @@
 </main>
 
 <script>
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzfjMsVIi_Vs3rf7emOstsx76oBvj4DBSrO2iCVAZtaiUYlP3E7gZP0nQE_vdiAjCcc/exec';
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwfiGPnEZ24Rmu82LTrtKu62ZqS8vBa58bUohqqQPE1PGIuszQiomN-NNnFqI3d16pL/exec';
 
 const DEFAULTS = {
   operarios: ['Santi (Pintura)','Adonai (Pintura)','Ricardo (Mecánica)','Mario (Mecánica)','Dani (Electricista)','Ricardo (Chapista)'],
@@ -465,16 +465,19 @@ function showToast(msg, type) {
 
 async function enviar() {
   const operario = document.getElementById('operario').value;
-  const fecha = document.getElementById('fecha').value;
+  const fechaRaw = document.getElementById('fecha').value;
   const auto = document.getElementById('auto').value;
   const tarea = document.getElementById('tarea').value;
   const horas = document.getElementById('horas').value;
   const notas = document.getElementById('notas').value.trim();
 
-  if (!operario || !fecha || !auto || !tarea || !horas) {
+  if (!operario || !fechaRaw || !auto || !tarea || !horas) {
     showToast('Completá todos los campos obligatorios.', 'err');
     return;
   }
+
+  const [anio, mes, dia] = fechaRaw.split('-');
+  const fecha = dia + '/' + mes + '/' + anio;
 
   const btn = document.getElementById('btn-enviar');
   btn.disabled = true;
