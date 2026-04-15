@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Gente de Fierro — Horas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --naranja: #C55A11;
+    --naranja-dark: #9e470d;
+    --naranja-light: #fdf0e8;
+    --negro: #111111;
+    --gris-oscuro: #2a2a2a;
+    --gris-medio: #6b6b6b;
+    --gris-claro: #e8e8e8;
+    --fondo: #f5f4f0;
+    --blanco: #ffffff;
+    --verde: #2d6a2d;
+    --verde-light: #eaf4ea;
+    --rojo: #8b1a1a;
+    --rojo-light: #fdeaea;
+    --azul-light: #e8f0fb;
+    --azul: #1a4a8b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--fondo);
+    color: var(--negro);
+    min-height: 100vh;
+    padding-bottom: 2rem;
+  }
+
+  header {
+    background: var(--negro);
+    padding: 1rem 1.25rem 0.875rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-inner {
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--blanco);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .logo span { color: var(--naranja); }
+
+  .nav {
+    display: flex;
+    gap: 4px;
+  }
+
+  .nav-btn {
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+    color: rgba(255,255,255,0.5);
+    transition: all 0.15s;
+  }
+
+  .nav-btn.active {
+    background: var(--naranja);
+    color: var(--blanco);
+  }
+
+  .main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 1.25rem 1rem;
+  }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .toast {
+    display: none;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    border-left: 3px solid;
+  }
+  .toast.ok { background: var(--verde-light); color: var(--verde); border-color: var(--verde); display: block; }
+  .toast.err { background: var(--rojo-light); color: var(--rojo); border-color: var(--rojo); display: block; }
+  .toast.sending { background: var(--azul-light); color: var(--azul); border-color: var(--azul); display: block; }
+
+  .field { margin-bottom: 1rem; }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gris-medio);
+    margin-bottom: 6px;
+  }
+
+  .field select,
+  .field input[type=date],
+  .field input[type=number],
+  .field textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--gris-claro);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: 'Barlow', sans-serif;
+    background: var(--blanco);
+    color: var(--negro);
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  .field select:focus,
+  .field input:focus,
+  .field textarea:focus {
+    border-color: var(--naranja);
+  }
+
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b6b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .field input[type=number] { width: 130px; }
+
+  .field textarea {
+    height: 90px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--naranja);
+    color: var(--blanco);
+    border: none;
+    border-radius: 8px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .btn-submit:active { background: var(--naranja-dark); transform: scale(0.98); }
+  .btn-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--gris-claro);
+    margin: 1.5rem 0;
+  }
+
+  .admin-block { margin-bottom: 1.5rem; }
+
+  .admin-block h3 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gris-oscuro);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--naranja);
+    display: inline-block;
+  }
+
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+    min-height: 32px;
+  }
+
+  .tag {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--blanco);
+    border: 1.5px solid var(--gris-claro);
+    border-radius: 20px;
+    padding: 4px 10px 4px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--negro);
+  }
+
+  .tag-del {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--gris-medio);
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 2px;
+    transition: color 0.1s;
+  }
+  .tag-del:hover { color: var(--rojo); }
+
+  .add-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .add-row input {
+    flex: 1;
+    padding: 9px 12px;
+    border: 1.5px solid var(--gris-claro);
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: 'Barlow', sans-serif;
+    background: var(--blanco);
+    color: var(--negro);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .add-row input:focus { border-color: var(--naranja); }
+
+  .add-row button {
+    padding: 9px 16px;
+    background: var(--negro);
+    color: var(--blanco);
+    border: none;
+    border-radius: 8px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .add-row button:hover { background: var(--naranja); }
+
+  .page-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gris-medio);
+    margin-bottom: 1.25rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">Gente de <span>Fierro</span></div>
+    <nav class="nav">
+      <button class="nav-btn active" onclick="showSection('cargar', this)">Cargar</button>
+      <button class="nav-btn" onclick="showSection('admin', this)">Admin</button>
+    </nav>
+  </div>
+</header>
+
+<main class="main">
+
+  <div id="sec-cargar" class="section active">
+    <div class="page-title">Registro de horas</div>
+    <div id="toast" class="toast"></div>
+
+    <div class="field">
+      <label>Operario</label>
+      <select id="operario"><option value="">— Seleccioná —</option></select>
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="fecha">
+      </div>
+      <div class="field">
+        <label>Horas</label>
+        <input type="number" id="horas" min="0.5" max="24" step="0.5" placeholder="ej: 4" style="width:100%">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Auto / Proyecto</label>
+      <select id="auto"><option value="">— Seleccioná —</option></select>
+    </div>
+
+    <div class="field">
+      <label>Tarea</label>
+      <select id="tarea"><option value="">— Seleccioná —</option></select>
+    </div>
+
+    <div class="field">
+      <label>Notas (opcional)</label>
+      <textarea id="notas" placeholder="Detalles del trabajo, demoras, observaciones..."></textarea>
+    </div>
+
+    <button class="btn-submit" id="btn-enviar" onclick="enviar()">Registrar horas</button>
+  </div>
+
+  <div id="sec-admin" class="section">
+    <div class="page-title">Administrar listas</div>
+
+    <div class="admin-block">
+      <h3>Autos / proyectos</h3>
+      <div class="tag-list" id="lista-autos"></div>
+      <div class="add-row">
+        <input type="text" id="nuevo-auto" placeholder="Agregar auto..." onkeydown="if(event.key==='Enter')agregarItem('autos','nuevo-auto')">
+        <button onclick="agregarItem('autos','nuevo-auto')">+ Agregar</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="admin-block">
+      <h3>Operarios</h3>
+      <div class="tag-list" id="lista-operarios"></div>
+      <div class="add-row">
+        <input type="text" id="nuevo-operario" placeholder="Agregar operario..." onkeydown="if(event.key==='Enter')agregarItem('operarios','nuevo-operario')">
+        <button onclick="agregarItem('operarios','nuevo-operario')">+ Agregar</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="admin-block">
+      <h3>Tareas</h3>
+      <div class="tag-list" id="lista-tareas"></div>
+      <div class="add-row">
+        <input type="text" id="nueva-tarea" placeholder="Agregar tarea..." onkeydown="if(event.key==='Enter')agregarItem('tareas','nueva-tarea')">
+        <button onclick="agregarItem('tareas','nueva-tarea')">+ Agregar</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbw_tWtDQ66bfcYErsnNn7SxHS2jEe8D_EuW0S-uZ15JanX7hhj8WJSFJPkd1p4x9HAB/exec';
+
+const DEFAULTS = {
+  operarios: ['Santi (Pintura)','Adonai (Pintura)','Ricardo (Mecánica)','Mario (Mecánica)','Dani (Electricista)','Ricardo (Chapista)'],
+  autos: ['DODGE RAM','CHEVROLET K5','CORVETTE 68','MINI COOPER','DODGE GTX'],
+  tareas: ['Pintura','Mecánica','Electricidad','Tapicería','Terminaciones']
+};
+
+const KEY = k => 'gdf_' + k;
+
+function load(k) {
+  try { const v = localStorage.getItem(KEY(k)); return v ? JSON.parse(v) : [...DEFAULTS[k]]; }
+  catch(e) { return [...DEFAULTS[k]]; }
+}
+
+function save(k, v) {
+  try { localStorage.setItem(KEY(k), JSON.stringify(v)); } catch(e) {}
+}
+
+const state = {
+  operarios: load('operarios'),
+  autos: load('autos'),
+  tareas: load('tareas')
+};
+
+function renderSelect(id, items) {
+  const sel = document.getElementById(id);
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Seleccioná —</option>';
+  items.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    if (v === cur) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function renderTags(listId, key) {
+  const el = document.getElementById(listId);
+  el.innerHTML = '';
+  state[key].forEach((v, i) => {
+    const tag = document.createElement('div');
+    tag.className = 'tag';
+    tag.innerHTML = `<span>${v}</span><button class="tag-del" onclick="eliminar('${key}',${i})">×</button>`;
+    el.appendChild(tag);
+  });
+}
+
+function eliminar(key, idx) {
+  if (!confirm('¿Eliminar "' + state[key][idx] + '"?')) return;
+  state[key].splice(idx, 1);
+  save(key, state[key]);
+  renderAll();
+}
+
+function agregarItem(key, inputId) {
+  const input = document.getElementById(inputId);
+  let v = input.value.trim();
+  if (key === 'autos') v = v.toUpperCase();
+  if (!v) return;
+  if (state[key].includes(v)) { input.value = ''; return; }
+  state[key].push(v);
+  save(key, state[key]);
+  input.value = '';
+  renderAll();
+}
+
+function renderAll() {
+  renderSelect('operario', state.operarios);
+  renderSelect('auto', state.autos);
+  renderSelect('tarea', state.tareas);
+  renderTags('lista-autos', 'autos');
+  renderTags('lista-operarios', 'operarios');
+  renderTags('lista-tareas', 'tareas');
+}
+
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type;
+  if (type === 'ok') setTimeout(() => { t.className = 'toast'; t.style.display = 'none'; }, 3500);
+}
+
+async function enviar() {
+  const operario = document.getElementById('operario').value;
+  const fecha = document.getElementById('fecha').value;
+  const auto = document.getElementById('auto').value;
+  const tarea = document.getElementById('tarea').value;
+  const horas = document.getElementById('horas').value;
+  const notas = document.getElementById('notas').value.trim();
+
+  if (!operario || !fecha || !auto || !tarea || !horas) {
+    showToast('Completá todos los campos obligatorios.', 'err');
+    return;
+  }
+
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true;
+  showToast('Enviando...', 'sending');
+
+  try {
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operario, fecha, auto, tarea, horas: parseFloat(horas), notas })
+    });
+    showToast('Horas registradas. ¡Gracias!', 'ok');
+    document.getElementById('horas').value = '';
+    document.getElementById('notas').value = '';
+  } catch(e) {
+    showToast('Sin conexión. Revisá el internet e intentá de nuevo.', 'err');
+  }
+
+  btn.disabled = false;
+}
+
+document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
+renderAll();
+</script>
+</body>
+</html>
