@@ -290,6 +290,7 @@
     <div class="logo">Gente de <span>Fierro</span></div>
     <nav class="nav">
       <button class="nav-btn active" onclick="showSection('cargar', this)">Cargar</button>
+      <button class="nav-btn" onclick="showSection('stats', this)">Stats</button>
       <button class="nav-btn" onclick="showSection('admin', this)">Admin</button>
     </nav>
   </div>
@@ -337,6 +338,7 @@
 
   <div id="sec-admin" class="section">
     <div class="page-title">Administrar listas</div>
+    <div id="admin-loading" style="font-size:13px;color:var(--gris-medio);margin-bottom:1rem;">Cargando listas desde Sheets...</div>
 
     <div class="admin-block">
       <h3>Autos / proyectos</h3>
@@ -370,33 +372,74 @@
     </div>
   </div>
 
+
+  <div id="sec-stats" class="section">
+    <div class="page-title">Dashboard</div>
+    <div id="stats-loading" style="text-align:center;padding:2rem;color:var(--gris-medio);font-size:14px;">Cargando datos...</div>
+    <div id="stats-content" style="display:none;">
+
+      <div style="margin-bottom:1.5rem;">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--gris-medio);margin-bottom:6px;">Ver por auto</div>
+        <select id="filtro-auto" onchange="renderStats()" style="width:100%;padding:10px 14px;border:1.5px solid #e8e8e8;border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:#111;">
+          <option value="">— Todos los autos —</option>
+        </select>
+      </div>
+
+      <div id="kpi-auto" style="display:none;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#C55A11;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #C55A11;">Horas por tarea</div>
+        <div id="chart-tarea" style="margin-bottom:1.5rem;"></div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#C55A11;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #C55A11;">Horas por operario</div>
+        <div id="chart-operario" style="margin-bottom:1.5rem;"></div>
+      </div>
+
+      <div id="kpi-todos" style="">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#C55A11;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #C55A11;">Horas por auto</div>
+        <div id="chart-autos" style="margin-bottom:1.5rem;"></div>
+      </div>
+
+      <div style="margin-bottom:1.5rem;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#C55A11;margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid #C55A11;">Ver por operario</div>
+        <select id="filtro-operario" onchange="renderOperario()" style="width:100%;padding:10px 14px;border:1.5px solid #e8e8e8;border-radius:8px;font-size:15px;font-family:inherit;background:#fff;color:#111;margin-bottom:12px;">
+          <option value="">— Elegí un operario —</option>
+        </select>
+        <div id="chart-dias" style="margin-bottom:1rem;"></div>
+      </div>
+
+    </div>
+  </div>
 </main>
 
 <script>
-const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwfiGPnEZ24Rmu82LTrtKu62ZqS8vBa58bUohqqQPE1PGIuszQiomN-NNnFqI3d16pL/exec';
-
-const DEFAULTS = {
-  operarios: ['Santi (Pintura)','Adonai (Pintura)','Ricardo (Mecánica)','Mario (Mecánica)','Dani (Electricista)','Ricardo (Chapista)'],
-  autos: ['DODGE RAM','CHEVROLET K5','CORVETTE 68','MINI COOPER','DODGE GTX'],
-  tareas: ['Pintura','Mecánica','Electricidad','Tapicería','Terminaciones']
-};
-
-const KEY = k => 'gdf_' + k;
-
-function load(k) {
-  try { const v = localStorage.getItem(KEY(k)); return v ? JSON.parse(v) : [...DEFAULTS[k]]; }
-  catch(e) { return [...DEFAULTS[k]]; }
-}
-
-function save(k, v) {
-  try { localStorage.setItem(KEY(k), JSON.stringify(v)); } catch(e) {}
-}
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxboccbWmZNltiRx82L2N9X0L-kTgdcthY1z611DamI1Fxa_iedwuWEknDLx1WEydFx/exec';
 
 const state = {
-  operarios: load('operarios'),
-  autos: load('autos'),
-  tareas: load('tareas')
+  operarios: [],
+  autos: [],
+  tareas: []
 };
+
+async function cargarListasGet() {
+  const SHEET_ID = '1BWJKy1UoOySd6Sg1cYUYbrR_AHhQskfdo_pbgU-01TM';
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Listas`;
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    const rows = text.trim().split('\n').slice(1);
+    state.autos = [];
+    state.operarios = [];
+    state.tareas = [];
+    rows.forEach(row => {
+      const cols = row.split(',').map(v => v.replace(/^"|"$/g,'').trim());
+      if (cols[0]) state.autos.push(cols[0]);
+      if (cols[1]) state.operarios.push(cols[1]);
+      if (cols[2]) state.tareas.push(cols[2]);
+    });
+    renderAll();
+    document.getElementById('admin-loading').style.display = 'none';
+  } catch(e) {
+    document.getElementById('admin-loading').textContent = 'Error cargando listas. Revisá la conexión.';
+  }
+}
 
 function renderSelect(id, items) {
   const sel = document.getElementById(id);
@@ -421,23 +464,40 @@ function renderTags(listId, key) {
   });
 }
 
-function eliminar(key, idx) {
-  if (!confirm('¿Eliminar "' + state[key][idx] + '"?')) return;
-  state[key].splice(idx, 1);
-  save(key, state[key]);
-  renderAll();
+async function eliminar(key, idx) {
+  const v = state[key][idx];
+  if (!confirm('¿Eliminar "' + v + '"?')) return;
+  try {
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'eliminarItem', key, value: v })
+    });
+    state[key].splice(idx, 1);
+    renderAll();
+  } catch(e) {}
 }
 
-function agregarItem(key, inputId) {
+async function agregarItem(key, inputId) {
   const input = document.getElementById(inputId);
   let v = input.value.trim();
   if (key === 'autos') v = v.toUpperCase();
   if (!v) return;
   if (state[key].includes(v)) { input.value = ''; return; }
-  state[key].push(v);
-  save(key, state[key]);
   input.value = '';
-  renderAll();
+  input.disabled = true;
+  try {
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'agregarItem', key, value: v })
+    });
+    state[key].push(v);
+    renderAll();
+  } catch(e) {}
+  input.disabled = false;
 }
 
 function renderAll() {
@@ -501,7 +561,145 @@ async function enviar() {
 }
 
 document.getElementById('fecha').value = new Date().toISOString().split('T')[0];
-renderAll();
+cargarListasGet();
 </script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SHEET_ID = '1BWJKy1UoOySd6Sg1cYUYbrR_AHhQskfdo_pbgU-01TM';
+const SHEET_NAME = 'Hoja 1';
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
+
+let allData = [];
+let charts = {};
+
+const COLORS = ['#C55A11','#1a4a8b','#2d6a2d','#8b1a1a','#854F0B','#534AB7','#1D9E75','#888780'];
+
+async function loadSheetData() {
+  try {
+    const res = await fetch(CSV_URL);
+    const text = await res.text();
+    const rows = text.trim().split('\n').map(r => {
+      return r.match(/(".*?"|[^",]+)(?=,|$)/g)
+        ?.map(v => v.replace(/^"|"$/g,'').trim()) || [];
+    });
+    // Skip header row
+    allData = rows.slice(1).filter(r => r[3] && r[3] !== '').map(r => ({
+      timestamp: r[0] || '',
+      operario: r[1] || '',
+      fecha: r[2] || '',
+      auto: r[3] || '',
+      tarea: r[4] || '',
+      horas: parseFloat(r[5]) || 0,
+      notas: r[6] || ''
+    }));
+
+    const autos = [...new Set(allData.map(d => d.auto))].sort();
+    const operarios = [...new Set(allData.map(d => d.operario))].sort();
+
+    const fAuto = document.getElementById('filtro-auto');
+    const fOp = document.getElementById('filtro-operario');
+    autos.forEach(a => { const o = document.createElement('option'); o.value = a; o.textContent = a; fAuto.appendChild(o); });
+    operarios.forEach(a => { const o = document.createElement('option'); o.value = a; o.textContent = a; fOp.appendChild(o); });
+
+    document.getElementById('stats-loading').style.display = 'none';
+    document.getElementById('stats-content').style.display = 'block';
+    renderStats();
+  } catch(e) {
+    document.getElementById('stats-loading').textContent = 'Error cargando datos. Revisá la conexión.';
+  }
+}
+
+function makeBarChart(canvasId, labels, datasets, horizontal) {
+  if (charts[canvasId]) { charts[canvasId].destroy(); }
+  const canvas = document.getElementById(canvasId);
+  charts[canvasId] = new Chart(canvas, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: horizontal ? 'y' : 'x',
+      plugins: { legend: { display: datasets.length > 1, position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 8 } } },
+      scales: {
+        x: { stacked: true, ticks: { font: { size: 11 } } },
+        y: { stacked: true, ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+function renderStats() {
+  const autoFiltro = document.getElementById('filtro-auto').value;
+  const data = autoFiltro ? allData.filter(d => d.auto === autoFiltro) : allData;
+
+  document.getElementById('kpi-auto').style.display = autoFiltro ? 'block' : 'none';
+  document.getElementById('kpi-todos').style.display = autoFiltro ? 'none' : 'block';
+
+  if (autoFiltro) {
+    // Horas por tarea para ese auto
+    const tareas = [...new Set(data.map(d => d.tarea))].sort();
+    const horasTarea = tareas.map(t => data.filter(d => d.tarea === t).reduce((s,d) => s + d.horas, 0));
+    
+    const divT = document.getElementById('chart-tarea');
+    divT.innerHTML = '<canvas id="c-tarea" role="img" aria-label="Horas por tarea"></canvas>';
+    divT.style.height = Math.max(120, tareas.length * 44 + 40) + 'px';
+    makeBarChart('c-tarea', tareas, [{ label: 'Horas', data: horasTarea, backgroundColor: COLORS[0] }], true);
+
+    // Horas por operario para ese auto
+    const ops = [...new Set(data.map(d => d.operario))].sort();
+    const horasOp = ops.map(o => data.filter(d => d.operario === o).reduce((s,d) => s + d.horas, 0));
+    
+    const divO = document.getElementById('chart-operario');
+    divO.innerHTML = '<canvas id="c-operario" role="img" aria-label="Horas por operario"></canvas>';
+    divO.style.height = Math.max(120, ops.length * 44 + 40) + 'px';
+    makeBarChart('c-operario', ops, [{ label: 'Horas', data: horasOp, backgroundColor: COLORS[1] }], true);
+
+  } else {
+    // Todos los autos - barras apiladas por tarea
+    const autos = [...new Set(allData.map(d => d.auto))].sort();
+    const tareas = [...new Set(allData.map(d => d.tarea))].sort();
+    const datasets = tareas.map((t, i) => ({
+      label: t,
+      data: autos.map(a => allData.filter(d => d.auto === a && d.tarea === t).reduce((s,d) => s + d.horas, 0)),
+      backgroundColor: COLORS[i % COLORS.length]
+    }));
+
+    const divA = document.getElementById('chart-autos');
+    divA.innerHTML = '<canvas id="c-autos" role="img" aria-label="Horas por auto"></canvas>';
+    divA.style.height = Math.max(150, autos.length * 44 + 60) + 'px';
+    makeBarChart('c-autos', autos, datasets, true);
+  }
+}
+
+function renderOperario() {
+  const op = document.getElementById('filtro-operario').value;
+  if (!op) { document.getElementById('chart-dias').innerHTML = ''; return; }
+  
+  const data = allData.filter(d => d.operario === op);
+  const fechas = [...new Set(data.map(d => d.fecha))].sort().reverse();
+  const autos = [...new Set(data.map(d => d.auto))].sort();
+  
+  const datasets = autos.map((a, i) => ({
+    label: a,
+    data: fechas.map(f => data.filter(d => d.fecha === f && d.auto === a).reduce((s,d) => s + d.horas, 0)),
+    backgroundColor: COLORS[i % COLORS.length]
+  }));
+
+  const div = document.getElementById('chart-dias');
+  div.innerHTML = '<canvas id="c-dias" role="img" aria-label="Horas por día"></canvas>';
+  div.style.height = Math.max(150, fechas.length * 44 + 60) + 'px';
+  makeBarChart('c-dias', fechas, datasets, true);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const origShow = window.showSection;
+  window.showSection = function(id, btn) {
+    origShow(id, btn);
+    if (id === 'stats' && allData.length === 0) loadSheetData();
+  };
+});
+</script>
+
 </body>
 </html>
